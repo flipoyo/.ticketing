@@ -9,7 +9,7 @@ its work lands on, its priority and its place in the queue —
 `main_1-3_Name_DevPlanTicket.md` — and lives in `DevTickets/openTickets/`.
 When its work is implemented, both prefixes are replaced by a `YYYYMMDD_`
 calendar stamp — the date the implementation landed — and the file moves to
-`DevTickets/archive/`.
+`DevTickets/archive/`, with an immutable copy in `DevTickets/archive/.deepArchive/`.
 
 **What this document is.** The naming and filing rules for planning
 tickets: `DevPlan*.md`, `DevPlanTicket*.md`, `CorPlan*.md`, and anything
@@ -34,7 +34,7 @@ rule does *not* cover.
 finishes a ticket.
 
 **What you need to do with it.** Give every new ticket its two prefixes
-when you create it (§2) and a branch line inside it (§3). Stamp and move it as part
+when you create it (§2) and a branch line inside it (§3). Stamp and move it, and deep-archive a copy (§4.1), as part
 of the commit that implements it (§5), not as a later tidy-up, and deliver
 a commit message for every repository that changed (§5.1). Close the short
 ticket it came from in the same change (§6).
@@ -45,7 +45,8 @@ graph LR
     W -->|"plans updated"| CU["DevTickets/archive/.closedUserTicket/<br/>YYYYMMDD_name.md<br/><i>closed request</i>"]
     A -->|"Ticket review<br/>re-ranks the piles"| A
     A -->|implemented| S["DevTickets/archive/<br/>YYYYMMDD_Name_DevPlanTicket.md<br/><i>done</i>"]
-    S --> H["historical record<br/>never edited again"]
+    S -->|"copied in the same change"| H["DevTickets/archive/.deepArchive/<br/>YYYYMMDD_Name_DevPlanTicket.md<br/><i>deep-archived: never edited</i>"]
+    S -->|"a link may be corrected,<br/>nothing else"| S
 
     classDef here fill:#1565C0,color:#fff,stroke:#111,stroke-width:2px;
     class S here;
@@ -58,7 +59,7 @@ graph LR
 | State | Where it lives | Filename |
 |---|---|---|
 | **Open** — planned, in progress, or partly done | `DevTickets/openTickets/` | ranked: `<branch>_<priority>-<rank>_<Name>_DevPlanTicket.md` |
-| **Implemented** — the work described is done | `DevTickets/archive/` | stamped: `<YYYYMMDD>_<Name>_DevPlanTicket.md` |
+| **Implemented** — the work described is done | `DevTickets/archive/` (the history ticket) and `DevTickets/archive/.deepArchive/` (its deep-archived copy) | stamped: `<YYYYMMDD>_<Name>_DevPlanTicket.md`, the same name in both |
 
 There is no third state. A ticket that turns out to be wrong, or that is
 superseded by another, is archived the same way — the stamp records when
@@ -207,9 +208,29 @@ never rewritten (see [DOCSTYLE.md](DevSpec/DOCSTYLE.md) §6). An archived ticket
 keeps that line: the two dates are different facts, and a ticket that was
 planned in August and shipped in September should say so on both counts.
 
-Neither date is ever edited afterwards. A stamped, archived ticket is a
-historical record — if the work needs revisiting, that is a new ticket,
-which may link back to this one.
+Neither date is ever edited afterwards. If the work needs revisiting,
+that is a new ticket, which may link back to this one.
+
+### 4.1 History ticket and deep-archived ticket
+
+An archived ticket is kept in two forms, written in the same change:
+
+| Form | Where | May be edited |
+|---|---|---|
+| **History ticket** | `DevTickets/archive/` | Only to correct a link whose target moved. Nothing else: not a word, not a date, not a typo. |
+| **Deep-archived ticket** | `DevTickets/archive/.deepArchive/`, same name | Never, links included. |
+
+**Why two.** A ticket links to other tickets and specs, and those move:
+their own archiving renames them. A link that is never corrected rots, and
+a reader following it lands nowhere. A ticket whose text is corrected even
+once is no longer the record of what the plan said when the work closed.
+The history ticket is the one readers follow, so its links are kept
+working. The deep-archived copy is the record, so nothing touches it. The
+two only ever differ in their links, which makes any other change easy to
+see with a plain `diff`.
+
+A project that adopts this rule starts it on the day it adopts it: tickets
+archived before then have no deep copy, and are history tickets.
 
 ## 5. The transition
 
@@ -221,7 +242,15 @@ git mv DevTickets/openTickets/<branch>_<priority>-<rank>_<Name>_DevPlanTicket.md
        DevTickets/archive/<YYYYMMDD>_<Name>_DevPlanTicket.md
 ```
 
-Then fix any link that pointed at the old path (`grep -rn "<Name>_DevPlanTicket"`).
+```bash
+mkdir -p DevTickets/archive/.deepArchive
+cp DevTickets/archive/<YYYYMMDD>_<Name>_DevPlanTicket.md DevTickets/archive/.deepArchive/
+```
+
+Then fix any link that pointed at the old path
+(`grep -rn "<Name>_DevPlanTicket"`): in living documents, in open
+tickets, and in history tickets, where it is the one edit allowed (§4.1).
+Never in `archive/.deepArchive/`, and never in a closed short ticket.
 
 The rank is dropped rather than kept because it is a position among the
 tickets that are *still open*. Once the work ships, that position has no
