@@ -27,8 +27,8 @@ changes.
 where `DevTickets/` lives and why it is private, the branch prefix and the
 priority-and-rank prefix an open ticket carries, the branch line every
 ticket states inside it, what the date stamp means, the commit messages a
-finished ticket owes, the short tickets plans are made from, and what the
-rule does *not* cover.
+finished ticket owes, the short tickets plans are made from and the loop that turns
+them into plans, and what the rule does *not* cover.
 
 **Who it is for.** Anyone — human or agent — who writes, ranks, or
 finishes a ticket.
@@ -74,9 +74,9 @@ that is a filing mistake, not a state.
 
 `DevTickets/` is the planning surface of one project, and it is **private**:
 it is the record of how the work is decided, which is nobody's business but
-the people doing it. A project that mounts a private configuration
-repository keeps it there — in ComplexGitSync, `.localSpec/DevTickets/` —
-so that installing or cloning the product does not hand a user sixty
+the people doing it. A project keeps it in one of its own private
+mounts, under `.agent/.local/`, in the mount that holds how its work gets
+done, so that installing or cloning the product does not hand a user sixty
 internal plans, most of them about work that was dropped.
 
 Each project's own spec says where its `DevTickets/` sits. Everything below
@@ -204,7 +204,7 @@ name that no longer exists.
 
 It is **not** the date the ticket was written. That is the `*Created:
 YYYY-MM-DD*` line under the title, which is set once at authoring time and
-never rewritten (see [DOCSTYLE.md](DevSpec/DOCSTYLE.md) §6). An archived ticket
+never rewritten (see [DOCSTYLE.md](../documentation/DOCSTYLE.md) §6). An archived ticket
 keeps that line: the two dates are different facts, and a ticket that was
 planned in August and shipped in September should say so on both counts.
 
@@ -308,11 +308,50 @@ A request made in conversation rather than in a file is the same thing.
 Write it down and file it, or the record of what was asked for lives only in
 a chat log.
 
+### 6.1 The loop
+
+```mermaid
+graph LR
+    U["Owner"] -->|"writes a request"| S["shortTickets/<br/>name.md"]
+    S -->|"owner says: do it"| O["openTickets/<br/>plans created, split,<br/>re-ranked or retired"]
+    S -->|"work done, same change"| C["archive/.closedUserTicket/<br/>YYYYMMDD_name.md"]
+    O -->|"implemented"| A["archive/<br/>YYYYMMDD_Name_DevPlanTicket.md"]
+```
+
+1. **The owner emits a short ticket.** It says what they want in whatever
+   words come naturally. It is not analysed, ranked or formatted, and it
+   is not obliged to agree with anything already planned: working out
+   what it collides with is the next step's job, not the owner's. It has
+   a plain descriptive name and no priority prefix.
+2. **The agent orchestrates, on the owner's word.** Nothing happens to a
+   short ticket until the owner asks for it. The agent's job is then not
+   to implement the request in code. It is to **make every open ticket
+   agree with it**:
+   - read every ticket in `openTickets/`, not only the obviously related
+     ones;
+   - create, split, re-rank, rename or retire tickets as the request
+     implies;
+   - carry the request into the specifications it changes, because a rule
+     that lives only in a ticket is a rule nobody will find;
+   - repair every cross-reference the changes break.
+
+   The point of doing it in one pass is consistency. A request answered in
+   one ticket and forgotten in six others leaves the pile saying
+   different things in different files, and the next reader cannot tell
+   which one is current.
+3. **The plans carry the work.** Implementation happens against
+   `openTickets/`, one ticket at a time, under §2 to §5. By then the
+   short ticket has done its job and is closed (§6).
+
+A project's own `DevTickets/README.md`, if it has one, is the fill-in for
+this section: where `DevTickets/` sits, the branches the project has and
+the prefix each one gives a ticket. It does not restate the loop.
+
 ## 7. What this does not cover
 
-Specs (a project's own `.localSpec/AdditionalSpecs.md`, the nested
-`DevSpec/DevSpecs.md`, [DOCSTYLE.md](DevSpec/DOCSTYLE.md), this file), a
-project's own `.localSpec/audit.md`, `README.md`, and the tutorials are
+Specs (a project's own `AdditionalSpecs.md`, the shared
+`DevSpecs.md`, [DOCSTYLE.md](../documentation/DOCSTYLE.md), this file), a
+project's own `audit.md`, `README.md`, and the tutorials are
 **living documents**, not tickets. They are edited in
 place forever, are never ranked or stamped, and never move to `archive/`.
 The test is simple: a ticket describes work to be done and stops being

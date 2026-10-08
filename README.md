@@ -12,3 +12,9 @@ directly (in the same repository `DevSpec` was nested inside) — a
 project's ticket convention and its development philosophy happened to
 share a repository, not because they were one thing. `AgentSkillsSplit`
 gives each its own.
+
+## Where the tickets go
+
+`DevTickets/` is the project's own and private; this repository holds only
+the rule. A project's `DevTickets/README.md` fills in §6.1 with where its
+tickets sit and which branches it has (`SpecTree.md` §2 in `DevSpec`).
